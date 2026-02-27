@@ -187,11 +187,9 @@ class _HeroSection extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: NetworkImage(
-            'https://raw.githubusercontent.com/destinychristianchurchintl-commits/image_dump/refs/heads/main/photo-1438232992991-995b7058bbb3.jpeg',
-          ),
+          image: AssetImage('assets/hero.jpeg'),
           fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
+          colorFilter: ColorFilter.mode(Colors.black87, BlendMode.darken),
         ),
       ),
       child: Center(
@@ -737,17 +735,17 @@ class _ContactSection extends StatelessWidget {
               _ContactCard(
                 icon: FontAwesomeIcons.phone,
                 title: "Phone 1",
-                value: "+234 800 000 0000",
+                value: "+234 803 471 1956",
               ),
               _ContactCard(
                 icon: FontAwesomeIcons.phone,
                 title: "Phone 2",
-                value: "+234 801 000 0000",
+                value: "+234 701 426 1561",
               ),
               _ContactCard(
                 icon: FontAwesomeIcons.envelope,
                 title: "Email",
-                value: "info@destinychurch.org",
+                value: "desctinychristianchurch@gmail.com",
               ),
             ],
           ),
