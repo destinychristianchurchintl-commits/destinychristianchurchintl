@@ -53,11 +53,13 @@ class _ScrollRevealState extends State<ScrollReveal> {
       },
       child: widget.child
           .animate(target: visible ? 1 : 0)
-          .fadeIn(duration: 700.ms)
-          .slideY(begin: 0.3),
+          .fadeIn(duration: 800.ms)
+          .slideY(begin: 0.4, duration: 800.ms, curve: Curves.easeOutCubic)
+          .scale(begin: const Offset(0.96, 0.96)),
     );
   }
 }
+
 
 /* ---------------- HOME ---------------- */
 
@@ -110,6 +112,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ScrollReveal(
               child: _GOSection(key: _goKey, isMobile: isMobile),
             ),
+            const _ContactSection(),
+
             const _Footer(),
           ],
         ),
@@ -191,19 +195,22 @@ class _HeroSection extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedTextKit(
-              totalRepeatCount: 1,
-              animatedTexts: [
-                TypewriterAnimatedText(
-                  "DESTINY CHRISTIAN CHURCH INTERNATIONAL",
-                  textAlign: TextAlign.center,
-                  textStyle: GoogleFonts.montserrat(
-                    fontSize: isMobile ? 24 : 50,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: AnimatedTextKit(
+                totalRepeatCount: 1,
+                animatedTexts: [
+                  TypewriterAnimatedText(
+                    "DESTINY CHRISTIAN CHURCH INTERNATIONAL",
+                    textAlign: TextAlign.center,
+                    textStyle: GoogleFonts.montserrat(
+                      fontSize: isMobile ? 30 : 60,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -224,23 +231,43 @@ class _HeroSection extends StatelessWidget {
 /* ---------------- VISION ---------------- */
 class _VisionMissionSection extends StatelessWidget {
   const _VisionMissionSection({super.key});
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 100),
+      padding: const EdgeInsets.symmetric(vertical: 120, horizontal: 40),
       color: const Color(0xFF0B1220),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: const [
-          _VisionCard(
-            title: "OUR VISION",
-            text: "Changing the world with the Word.",
-          ),
-          _VisionCard(
-            title: "OUR MISSION",
-            text: "Making Men Heavenly Conscious and Earthly Relevant",
-          ),
-        ],
+      child: Center(
+        child: isMobile
+            ? Column(
+                children: const [
+                  _VisionCard(
+                    title: "OUR VISION",
+                    text: "Changing the world with the Word.",
+                  ),
+                  SizedBox(height: 40),
+                  _VisionCard(
+                    title: "OUR MISSION",
+                    text: "Making Men Heavenly Conscious and Earthly Relevant",
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  _VisionCard(
+                    title: "OUR VISION",
+                    text: "Changing the world with the Word.",
+                  ),
+                  SizedBox(width: 60),
+                  _VisionCard(
+                    title: "OUR MISSION",
+                    text: "Making Men Heavenly Conscious and Earthly Relevant",
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -253,29 +280,38 @@ class _VisionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 450,
+      height: 300,
+      width: MediaQuery.of(context).size.width < 900 ? double.infinity : 500,
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.6),
         border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
       ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              letterSpacing: 2,
-              color: Color(0xFFD4AF37),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 22,
+                letterSpacing: 2,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFD4AF37),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, height: 1.6),
-          ),
-        ],
+            const SizedBox(height: 20),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 17,
+                height: 1.8,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -453,21 +489,14 @@ class _SermonSection extends StatefulWidget {
 }
 
 class _SermonSectionState extends State<_SermonSection> {
-  late final List<YoutubePlayerController> controllers;
-
   final videos = const ["IQFOMyAzJ3M", "Ml5R1Oyur4o", "GDiJPCnHCRc"];
 
-  @override
-  void initState() {
-    super.initState();
-    controllers = videos
-        .map((id) => YoutubePlayerController.fromVideoId(videoId: id))
-        .toList();
-  }
+  final Map<int, YoutubePlayerController> controllers = {};
+  final Set<int> initialized = {};
 
   @override
   void dispose() {
-    for (final c in controllers) {
+    for (final c in controllers.values) {
       c.close();
     }
     super.dispose();
@@ -492,14 +521,40 @@ class _SermonSectionState extends State<_SermonSection> {
             spacing: 30,
             runSpacing: 30,
             alignment: WrapAlignment.center,
-            children: List.generate(controllers.length, (index) {
-              return SizedBox(
-                width: 450,
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: YoutubePlayer(controller: controllers[index]),
+            children: List.generate(videos.length, (index) {
+              return VisibilityDetector(
+                key: Key("video_$index"),
+                onVisibilityChanged: (info) {
+                  if (info.visibleFraction > 0.3 &&
+                      !initialized.contains(index)) {
+                    controllers[index] =
+                        YoutubePlayerController.fromVideoId(
+                          videoId: videos[index],
+                        );
+                    initialized.add(index);
+                    setState(() {});
+                  }
+                },
+                child: SizedBox(
+                  width: 450,
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: initialized.contains(index)
+                        ? YoutubePlayer(controller: controllers[index]!)
+                        : Container(
+                      color: Colors.black,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFD4AF37),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ).animate().fadeIn(delay: (index * 200).ms).slideY(begin: 0.3);
+              )
+                  .animate()
+                  .fadeIn(delay: (index * 200).ms)
+                  .slideY(begin: 0.3);
             }),
           ),
         ),
@@ -508,6 +563,120 @@ class _SermonSectionState extends State<_SermonSection> {
   }
 }
 
+class _ContactSection extends StatelessWidget {
+  const _ContactSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 100, horizontal: 40),
+      color: const Color(0xFF0B1220),
+      child: Column(
+        children: [
+          const Text(
+            "CONTACT US",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+              color: Color(0xFFD4AF37),
+            ),
+          ),
+          const SizedBox(height: 40),
+          Wrap(
+            spacing: 40,
+            runSpacing: 30,
+            alignment: WrapAlignment.center,
+            children: const [
+              _ContactCard(
+                icon: FontAwesomeIcons.phone,
+                title: "Phone 1",
+                value: "+234 800 000 0000",
+              ),
+              _ContactCard(
+                icon: FontAwesomeIcons.phone,
+                title: "Phone 2",
+                value: "+234 801 000 0000",
+              ),
+              _ContactCard(
+                icon: FontAwesomeIcons.envelope,
+                title: "Email",
+                value: "info@destinychurch.org",
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: 0.3);
+  }
+}
+
+class _ContactCard extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _ContactCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  State<_ContactCard> createState() => _ContactCardState();
+}
+
+class _ContactCardState extends State<_ContactCard> {
+  bool hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovering = true),
+      onExit: (_) => setState(() => hovering = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: 320,
+        padding: const EdgeInsets.all(30),
+        transform: hovering
+            ? (Matrix4.identity()..translate(0, -6))
+            : Matrix4.identity(),
+        decoration: BoxDecoration(
+          color: hovering ? const Color(0xFF111C2E) : const Color(0xFF020817),
+          border: Border.all(
+            color: hovering ? const Color(0xFFD4AF37) : Colors.white24,
+          ),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 25,
+              color: Colors.black.withOpacity(0.6),
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            FaIcon(widget.icon, color: const Color(0xFFD4AF37), size: 28),
+            const SizedBox(height: 20),
+            Text(
+              widget.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              widget.value,
+              style: const TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 /* ---------------- BRANCH HOVER ---------------- */
 
 class _BranchesSection extends StatelessWidget {
@@ -515,41 +684,100 @@ class _BranchesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 100),
-      child: Wrap(
-        spacing: 30,
-        runSpacing: 30,
-        alignment: WrapAlignment.center,
-        children: const [
-          _BranchCard(
-            name: "Upper Room Parish",
-            address: "12 Faith Avenue, Port Harcourt",
-            sunday: "Sunday: 8:00am",
-            midweek: "Wednesday: 5:00pm",
-            prayer: "Friday: 5:00pm",
+      padding: const EdgeInsets.symmetric(vertical: 120, horizontal: 40),
+      child: Column(
+        children: [
+          const Text(
+            "OUR PARISHES",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
           ),
-          _BranchCard(
-            name: "Grace Cathedral",
-            address: "45 Dominion Road, Lagos",
-            sunday: "Sunday: 9:00am",
-            midweek: "Tuesday: 6:00pm",
-            prayer: "Thursday: 5:30pm",
-          ),
-          _BranchCard(
-            name: "Destiny Center",
-            address: "3 Kingdom Close, Abuja",
-            sunday: "Sunday: 8:30am",
-            midweek: "Wednesday: 6:00pm",
-            prayer: "Saturday: 7:00am",
-          ),
-          _BranchCard(
-            name: "Glory Land Parish",
-            address: "7 Covenant Street, Aba",
-            sunday: "Sunday: 7:30am",
-            midweek: "Thursday: 5:00pm",
-            prayer: "Monday: 6:00am",
-          ),
+          const SizedBox(height: 60),
+
+          /// DESKTOP GRID (2 x 2)
+          if (!isMobile)
+            SizedBox(
+              width: 1100,
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 40,
+                mainAxisSpacing: 40,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: 1.6,
+                children: const [
+                  _BranchCard(
+                    name: "Upper Room Parish",
+                    address: "80 School Road by Asa Road, Aba",
+                    sunday: "Sunday: 8:00am",
+                    midweek: "Wednesday: 5:00pm",
+                    prayer: "Friday: 5:00pm",
+                  ),
+                  _BranchCard(
+                    name: "Glory Land Parish",
+                    address: "109 Iheorji Avenue off Ohanku, Aba",
+                    sunday: "Sunday: 7:30am",
+                    midweek: "Thursday: 5:00pm",
+                    prayer: "Monday: 6:00am",
+                  ),
+                  _BranchCard(
+                    name: "Grace Arena",
+                    address: "109 EbuleIheorji Avenue off Ohanku, Aba",
+                    sunday: "Sunday: 9:00am",
+                    midweek: "Tuesday: 6:00pm",
+                    prayer: "Thursday: 5:30pm",
+                  ),
+                  _BranchCard(
+                    name: "Potters House",
+                    address: "33 Umuocha Street",
+                    sunday: "Sunday: 8:30am",
+                    midweek: "Wednesday: 6:00pm",
+                    prayer: "Saturday: 7:00am",
+                  ),
+                ],
+              ),
+            ),
+
+          /// MOBILE LAYOUT (stacked & bigger)
+          if (isMobile)
+            Column(
+              children: const [
+                _BranchCard(
+                  name: "Upper Room Parish",
+                  address: "80 School Road by Asa Road, Aba",
+                  sunday: "Sunday: 8:00am",
+                  midweek: "Wednesday: 5:00pm",
+                  prayer: "Friday: 5:00pm",
+                ),
+                _BranchCard(
+                  name: "Glory Land Parish",
+                  address: "109 Iheorji Avenue off Ohanku, Aba",
+                  sunday: "Sunday: 7:30am",
+                  midweek: "Thursday: 5:00pm",
+                  prayer: "Monday: 6:00am",
+                ),
+                _BranchCard(
+                  name: "Grace Arena",
+                  address: "109 EbuleIheorji Avenue off Ohanku, Aba",
+                  sunday: "Sunday: 9:00am",
+                  midweek: "Tuesday: 6:00pm",
+                  prayer: "Thursday: 5:30pm",
+                ),
+                _BranchCard(
+                  name: "Potters House",
+                  address: "33 Umuocha Street",
+                  sunday: "Sunday: 8:30am",
+                  midweek: "Wednesday: 6:00pm",
+                  prayer: "Saturday: 7:00am",
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -580,23 +808,27 @@ class _BranchCardState extends State<_BranchCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
     return MouseRegion(
       onEnter: (_) => setState(() => hovering = true),
       onExit: (_) => setState(() => hovering = false),
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        width: 340,
-        padding: const EdgeInsets.all(30),
+        width: isMobile ? double.infinity : null,
+        padding: const EdgeInsets.all(40),
         transform: hovering
             ? (Matrix4.identity()..translate(0, -8))
             : Matrix4.identity(),
         decoration: BoxDecoration(
           color: hovering ? const Color(0xFF111C2E) : const Color(0xFF0B1220),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: hovering
                 ? const Color(0xFFD4AF37)
-                : const Color(0xFFD4AF37).withOpacity(0.2),
+                : const Color(0xFFD4AF37).withOpacity(0.25),
+            width: hovering ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
@@ -609,26 +841,73 @@ class _BranchCardState extends State<_BranchCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// PARISH NAME (BIGGER & STRONGER)
             Text(
-              widget.name,
+              widget.name.toUpperCase(),
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
                 color: Color(0xFFD4AF37),
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              widget.address,
-              style: const TextStyle(color: Colors.white60, fontSize: 14),
+
+            const SizedBox(height: 12),
+
+            /// ADDRESS (clearer hierarchy)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on, size: 18, color: Colors.white54),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.address,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 15),
-            Text(widget.sunday),
-            Text(widget.midweek),
-            Text(widget.prayer),
+
+            const SizedBox(height: 25),
+
+            const Divider(color: Colors.white12),
+
+            const SizedBox(height: 20),
+
+            /// SERVICE TIMES (VISUALLY STRONG)
+            _serviceRow(Icons.wb_sunny_outlined, widget.sunday),
+            const SizedBox(height: 12),
+            _serviceRow(Icons.menu_book_outlined, widget.midweek),
+            const SizedBox(height: 12),
+            _serviceRow(FontAwesomeIcons.personPraying, widget.prayer),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _serviceRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFFD4AF37)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
