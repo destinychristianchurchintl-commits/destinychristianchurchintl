@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'dart:html' as html;
 
+import 'models/sermon.dart';
 void main() => runApp(const DestinyApp());
 
 class DestinyApp extends StatelessWidget {
@@ -481,26 +484,16 @@ class _Footer extends StatelessWidget {
 }
 /* ---------------- SERMON FIX ---------------- */
 
-class _SermonSection extends StatefulWidget {
+/* ---------------- SERMON SECTION (Thumbnail → YouTube Link) ---------------- */
+
+class _SermonSection extends StatelessWidget {
   const _SermonSection({super.key});
 
-  @override
-  State<_SermonSection> createState() => _SermonSectionState();
-}
-
-class _SermonSectionState extends State<_SermonSection> {
-  final videos = const ["IQFOMyAzJ3M", "Ml5R1Oyur4o", "GDiJPCnHCRc"];
-
-  final Map<int, YoutubePlayerController> controllers = {};
-  final Set<int> initialized = {};
-
-  @override
-  void dispose() {
-    for (final c in controllers.values) {
-      c.close();
-    }
-    super.dispose();
-  }
+  static const _videos = [
+    (id: "IQFOMyAzJ3M", title: "Message From The Messenger", date: "Feb 22, 2026"),
+    (id: "Ml5R1Oyur4o", title: "LIVING HOPE IN A HOSTILE WORLD ", date: "Feb 9, 2026"),
+    (id: "GDiJPCnHCRc", title: "Why Must I Pray", date: "Jan 11, 2026"),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -521,36 +514,12 @@ class _SermonSectionState extends State<_SermonSection> {
             spacing: 30,
             runSpacing: 30,
             alignment: WrapAlignment.center,
-            children: List.generate(videos.length, (index) {
-              return VisibilityDetector(
-                key: Key("video_$index"),
-                onVisibilityChanged: (info) {
-                  if (info.visibleFraction > 0.3 &&
-                      !initialized.contains(index)) {
-                    controllers[index] =
-                        YoutubePlayerController.fromVideoId(
-                          videoId: videos[index],
-                        );
-                    initialized.add(index);
-                    setState(() {});
-                  }
-                },
-                child: SizedBox(
-                  width: 450,
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: initialized.contains(index)
-                        ? YoutubePlayer(controller: controllers[index]!)
-                        : Container(
-                      color: Colors.black,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFD4AF37),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+            children: List.generate(_videos.length, (index) {
+              final video = _videos[index];
+              return _SermonCard(
+                videoId: video.id,
+                title: video.title,
+                date: video.date,
               )
                   .animate()
                   .fadeIn(delay: (index * 200).ms)
@@ -562,6 +531,183 @@ class _SermonSectionState extends State<_SermonSection> {
     );
   }
 }
+
+class _SermonCard extends StatefulWidget {
+  final String videoId;
+  final String title;
+  final String date; // ADD THIS
+
+  const _SermonCard({required this.videoId, required this.title, required this.date}); // ADD date
+
+  @override
+  State<_SermonCard> createState() => _SermonCardState();
+}
+
+class _SermonCardState extends State<_SermonCard> {
+  bool hovering = false;
+
+  String get _thumbnailUrl =>
+      'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg';
+
+  String get _youtubeUrl =>
+      'https://www.youtube.com/watch?v=${widget.videoId}';
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovering = true),
+      onExit: (_) => setState(() => hovering = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => launchUrl(Uri.parse(_youtubeUrl)),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 450,
+          transform: hovering
+              ? (Matrix4.identity()..translate(0.0, -8.0))
+              : Matrix4.identity(),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: hovering
+                  ? const Color(0xFFD4AF37)
+                  : const Color(0xFFD4AF37).withOpacity(0.25),
+            ),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: hovering ? 30 : 15,
+                color: Colors.black.withOpacity(0.6),
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Thumbnail image
+                  Image.network(
+                    _thumbnailUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: const Color(0xFF0B1220),
+                      child: const Icon(Icons.video_library,
+                          color: Color(0xFFD4AF37), size: 48),
+                    ),
+                  ),
+
+                  // Persistent gradient overlay (bottom for text legibility)
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.75),
+                          ],
+                          stops: const [0.45, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Dark overlay on hover
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: hovering ? 0.3 : 0.0,
+                    child: Container(color: Colors.black),
+                  ),
+
+                  // YouTube play button (center)
+                  Center(
+                    child: AnimatedScale(
+                      scale: hovering ? 1.15 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: FaIcon(
+                        FontAwesomeIcons.youtube,
+                        size: hovering ? 52 : 44,
+                        color: hovering ? const Color(0xFFFF0000) : Colors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ),
+
+                  // Title + date at bottom
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              letterSpacing: 0.5,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.date,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.65),
+                              fontSize: 12,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // "Watch on YouTube" hover label (top-right badge)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 300),
+                      opacity: hovering ? 1.0 : 0.0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF0000),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "Watch on YouTube",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _ContactSection extends StatelessWidget {
   const _ContactSection();
