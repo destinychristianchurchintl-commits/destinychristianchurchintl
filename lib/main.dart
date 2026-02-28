@@ -352,27 +352,55 @@ class _AboutSection extends StatelessWidget {
     ).animate().fadeIn().slideY(begin: 0.2);
   }
 }
-
 /* ---------------- GIVING ---------------- */
 class _GivingSection extends StatelessWidget {
   const _GivingSection({super.key});
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 120),
+      padding: const EdgeInsets.symmetric(vertical: 120, horizontal: 40),
       color: const Color(0xFFD4AF37),
-      child: Wrap(
-        spacing: 40,
-        runSpacing: 40,
-        alignment: WrapAlignment.center,
-        children: const [
-          _AccountCard(
-            title: "LOCAL ACCOUNT",
-            details: "Union Bank\nAcct No: 0123456789",
+      child: Column(
+        children: [
+          Text(
+            "GIVE TO GOD'S WORK",
+            style: GoogleFonts.montserrat(
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 3,
+              color: Colors.black,
+            ),
           ),
-          _AccountCard(
-            title: "DOMICILIARY (USD)",
-            details: "Union Bank\nAcct No: 1234567890",
+          const SizedBox(height: 10),
+          Text(
+            "Your giving fuels the kingdom. Every seed matters.",
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 60),
+          Wrap(
+            spacing: 40,
+            runSpacing: 40,
+            alignment: WrapAlignment.center,
+            children: const [
+              _AccountCard(
+                title: "LOCAL ACCOUNT",
+                bank: "Union Bank",
+                accountName: "Destiny Christian Church Int'l",
+                accountNumber: "0043196110",
+                currency: "NGN",
+              ),
+              _AccountCard(
+                title: "DOMICILIARY ACCOUNT",
+                bank: "Union Bank",
+                accountName: "Destiny Christian Church Int'l",
+                accountNumber: "0043196110",
+                currency: "USD",
+              ),
+            ],
           ),
         ],
       ),
@@ -380,40 +408,216 @@ class _GivingSection extends StatelessWidget {
   }
 }
 
-class _AccountCard extends StatelessWidget {
+class _AccountCard extends StatefulWidget {
   final String title;
-  final String details;
-  const _AccountCard({required this.title, required this.details});
+  final String bank;
+  final String accountName;
+  final String accountNumber;
+  final String currency;
+
+  const _AccountCard({
+    required this.title,
+    required this.bank,
+    required this.accountName,
+    required this.accountNumber,
+    required this.currency,
+  });
+
+  @override
+  State<_AccountCard> createState() => _AccountCardState();
+}
+
+class _AccountCardState extends State<_AccountCard> {
+  bool _copied = false;
+
+  void _copyAccountNumber() {
+    html.window.navigator.clipboard?.writeText(widget.accountNumber);
+    setState(() => _copied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 400,
-      padding: const EdgeInsets.all(40),
+      width: 420,
+      padding: const EdgeInsets.all(36),
       decoration: BoxDecoration(
         color: Colors.black,
-        border: Border.all(color: Colors.white24),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 30,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Currency badge + title row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                widget.title,
+                style: GoogleFonts.montserrat(
+                  color: const Color(0xFFD4AF37),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2,
+                  fontSize: 13,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.6)),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  widget.currency,
+                  style: GoogleFonts.montserrat(
+                    color: const Color(0xFFD4AF37),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 28),
+          const Divider(color: Colors.white10),
+          const SizedBox(height: 24),
+
+          // Bank name
           Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFFD4AF37),
-              fontWeight: FontWeight.bold,
+            "BANK",
+            style: GoogleFonts.montserrat(
+              color: Colors.white30,
+              fontSize: 10,
               letterSpacing: 2,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
           Text(
-            details,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70),
+            widget.bank,
+            style: GoogleFonts.montserrat(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          // Account name
+          Text(
+            "ACCOUNT NAME",
+            style: GoogleFonts.montserrat(
+              color: Colors.white30,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            widget.accountName,
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          // Account number + copy button
+          Text(
+            "ACCOUNT NUMBER",
+            style: GoogleFonts.montserrat(
+              color: Colors.white30,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.accountNumber,
+                  style: GoogleFonts.sourceCodePro(
+                    color: const Color(0xFFD4AF37),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: _copyAccountNumber,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: _copied
+                        ? const Color(0xFFD4AF37).withOpacity(0.2)
+                        : Colors.white.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _copied ? const Color(0xFFD4AF37) : Colors.white24,
+                    ),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _copied
+                        ? Row(
+                      key: const ValueKey('copied'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check, color: Color(0xFFD4AF37), size: 14),
+                        const SizedBox(width: 5),
+                        Text("Copied",
+                            style: GoogleFonts.montserrat(
+                              color: const Color(0xFFD4AF37),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            )),
+                      ],
+                    )
+                        : Row(
+                      key: const ValueKey('copy'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.copy, color: Colors.white60, size: 14),
+                        const SizedBox(width: 5),
+                        Text("Copy",
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white60,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            )),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-} /* ---------------- GO SECTION ---------------- */
+}
 
 class _GOSection extends StatelessWidget {
   final bool isMobile;
@@ -459,15 +663,29 @@ class _Footer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
-        children: const [
+        children:  [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FaIcon(FontAwesomeIcons.facebook),
+              InkWell(
+                onTap: () {
+                  launchUrl(Uri.parse("https://web.facebook.com/destinychristian.church.7"));
+                },
+
+                  child: FaIcon(FontAwesomeIcons.facebook)),
               SizedBox(width: 30),
-              FaIcon(FontAwesomeIcons.youtube),
+              InkWell(
+                  onTap: () {
+                    launchUrl(Uri.parse("https://www.youtube.com/@destinychristianchurchintl"));
+                  },
+
+                  child: FaIcon(FontAwesomeIcons.youtube)),
               SizedBox(width: 30),
-              FaIcon(FontAwesomeIcons.instagram),
+              InkWell(
+                  onTap: () {
+                    launchUrl(Uri.parse("https://www.instagram.com/dcciglobal/"));
+                  },
+                  child: FaIcon(FontAwesomeIcons.instagram)),
             ],
           ),
           SizedBox(height: 20),
@@ -780,7 +998,7 @@ class _ContactCardState extends State<_ContactCard> {
       onExit: (_) => setState(() => hovering = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        width: 320,
+        width: 360,
         padding: const EdgeInsets.all(30),
         transform: hovering
             ? (Matrix4.identity()..translate(0, -6))
@@ -899,6 +1117,7 @@ class _BranchesSection extends StatelessWidget {
                   midweek: "Wednesday: 5:00pm",
                   prayer: "Friday: 5:00pm",
                 ),
+                SizedBox(height: 10,),
                 _BranchCard(
                   name: "Glory Land Parish",
                   address: "109 Iheorji Avenue off Ohanku, Aba",
@@ -906,6 +1125,8 @@ class _BranchesSection extends StatelessWidget {
                   midweek: "Thursday: 5:00pm",
                   prayer: "Monday: 6:00am",
                 ),
+                SizedBox(height: 10,),
+
                 _BranchCard(
                   name: "Grace Arena",
                   address: "109 EbuleIheorji Avenue off Ohanku, Aba",
@@ -913,6 +1134,8 @@ class _BranchesSection extends StatelessWidget {
                   midweek: "Tuesday: 6:00pm",
                   prayer: "Thursday: 5:30pm",
                 ),
+                SizedBox(height: 10,),
+
                 _BranchCard(
                   name: "Potters House",
                   address: "33 Umuocha Street",
